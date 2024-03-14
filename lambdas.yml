@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: lambda-stack
+
+Parameters:
+  Env:
+    Type: String
+  App:
+    Type: String
+  ReceiverLambdaIAMRoleArn:
+    Type: String
+  PAConverterLambdaRoleArn:
+    Type: String
+  PAUpdateLambdaRoleArn:
+    Type: String
+
+Resources:
+  VendorsBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub "${Env}-${App}-vendors-bucket"
+
+  PAConverterLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Env}-${App}-pa-converter-lambda"
+      Handler: index.handler
+      Runtime: nodejs16.x
+      MemorySize: 128
+      Role: !Ref PAConverterLambdaRoleArn
+      Policies:
+        - S3Policy:
+            Statement:
+              Effect: Allow
+              Action: 's3:GetObject'
+              Resource: !Sub "arn:aws:s3:::${VendorsBucket}/*"
+        - DynamoDBPolicy:
+            Statement:
+              Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: '*'
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref VendorsBucket
+            Events: 's3:ObjectCreated:*'
+      InlineCode: |
+        exports.handler = async(event) => console.log('PAConverterLambda');
+
+  PAUpdateLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Env}-${App}-pa-update-lambda"
+      Handler: index.handler
+      Runtime: nodejs16.x
+      MemorySize: 128
+      Role: !Ref PAUpdateLambdaRoleArn
+      Policies:
+          - S3Policy:
+              Statement:
+                Effect: Allow
+                Action: 's3:GetObject'
+                Resource: !Sub "arn:aws:s3:::${VendorsBucket}/*"
+          - DynamoDBPolicy:
+            Statement:
+              Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: '*'
+      InlineCode: |
+        exports.handler = async(event) => console.log('PAUpdateLambda');
+
+  LambdaS3EventPermissionConverter:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PAConverterLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt VendorsBucket.Arn
+
+  LambdaS3EventPermissionUpdater:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PAUpdateLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt VendorsBucket.Arn
+

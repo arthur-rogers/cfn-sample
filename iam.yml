@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: iam-stack
+
+Parameters:
+  Env:
+    Type: String
+  App:
+    Type: String
+  # VendorsBucketArn:
+  #   Type: String
+
+Resources:
+  SQSSendMessagePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${Env}-${App}-sqs-send-message-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "sqs:SendMessage"
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Env}-${App}*"
+
+  SQSDeleteMessagePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${Env}-${App}-sqs-delete-message-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "sqs:DeleteMessage"
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Env}-${App}*"
+
+  SQSReceiveMessagePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${Env}-${App}-sqs-receive-message-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "sqs:ReceiveMessage"
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Env}-${App}*"
+
+  SQSGetQueueAttributesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${Env}-${App}-sqs-get-queue-attributes-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "sqs:GetQueueAttributes"
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Env}-${App}*"
+
+  # S3GetObjectPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     ManagedPolicyName: !Sub "${Env}-${App}-s3-get-object-policy"
+  #     PolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - "s3:GetObject"
+  #           Resource:
+  #             - !Sub "${VendorsBucketArn}/*"
+    
+  ReceiverLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Env}-${App}-receiver-lambda-role"
+      ManagedPolicyArns:
+        - !Ref SQSSendMessagePolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Tags:
+        - Key: "Application"
+          Value: !Ref App
+        - Key: "Environment"
+          Value: !Ref Env
+
+  PAConverterLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Env}-${App}-pa-converter-lambda-role"
+      ManagedPolicyArns:
+        - !Ref SQSReceiveMessagePolicy
+        - !Ref SQSDeleteMessagePolicy
+        - !Ref SQSSendMessagePolicy
+        # - !Ref S3GetObjectPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Tags:
+        - Key: "Application"
+          Value: !Ref App
+        - Key: "Environment"
+          Value: !Ref Env
+
+  PAUpdateLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Env}-${App}-pa-update-lambda-role"
+      ManagedPolicyArns:
+        - !Ref SQSReceiveMessagePolicy
+        # - !Ref S3GetObjectPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Tags:
+        - Key: "Application"
+          Value: !Ref App
+        - Key: "Environment"
+          Value: !Ref Env
+
+Outputs:
+  PAConverterLambdaRoleArn:
+    Value: !GetAtt PAConverterLambdaRole.Arn
+  ReceiverLambdaIAMRoleArn:
+    Value: !GetAtt ReceiverLambdaIAMRole.Arn
+  PAUpdateLambdaRoleArn:
+    Value: !GetAtt PAUpdateLambdaRole.Arn
+  
+    

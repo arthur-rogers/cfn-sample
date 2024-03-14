@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: s3-stack
+
+Parameters:
+  Env:
+    Type: String
+  App:
+    Type: String
+
+
+Resources:
+  VendorsBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub "${Env}-${App}-vendors-bucket"
+  
+Outputs:
+  VendorsBucketArn:
+    Value: !GetAtt VendorsBucket.Arn
+  VendorsBucketName:
+    Value: !Ref VendorsBucket

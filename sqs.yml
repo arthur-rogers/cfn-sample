@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: sqs-stack
+
+Parameters:
+  Env:
+    Type: String
+  App:
+    Type: String
+
+Resources:
+  # ApiRequestProcessingQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Sub "${Env}-${App}-api-request-processing-queue.fifo"
+  #     DelaySeconds: 0
+  #     FifoQueue:  true
+  #     # BatchSize: 1
+  
+  InfinixProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Env}-${App}-infinix-processing-queue.fifo"
+      DelaySeconds: 0
+      FifoQueue:  true
+
+Outputs:
+  InfinixSqsQueueArn:
+    Value: !GetAtt InfinixProcessingQueue.Arn
+  # ApiSqsQueueArn:
+  #   Value: !GetAtt ApiRequestProcessingQueue.Arn

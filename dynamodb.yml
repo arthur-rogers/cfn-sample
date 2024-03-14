@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: lambda-stack
+
+Parameters:
+  Env:
+    Type: String
+  App:
+    Type: String
+
+Resources:
+  PassUpdatesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${Env}-${App}-pass-updates-table"
+      AttributeDefinitions:
+        - AttributeName: caseId
+          AttributeType: S
+        - AttributeName: authId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: caseId
+          KeyType: HASH
+        - AttributeName: authId
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  PassFileProcessingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${Env}-${App}-pass-file-processing-table"
+      AttributeDefinitions:
+        - AttributeName: vendor
+          AttributeType: S
+        - AttributeName: filePath
+          AttributeType: S
+      KeySchema:
+        - AttributeName: vendor
+          KeyType: HASH
+        - AttributeName: filePath
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+Outputs:
+  PassUpdatesTableName:
+    Value: !Ref PassUpdatesTable
+  PassFileProcessingTableName:
+    Value: !Ref PassFileProcessingTable
+  PassUpdatesTableNameStreamArn:
+    Value: !GetAtt PassUpdatesTable.StreamArn
+  PassFileProcessingTableStreamArn:
+    Value: !GetAtt PassFileProcessingTable.StreamArn
+  

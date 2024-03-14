@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: test
+
+Parameters:
+  Env: 
+    Type: String
+    Default: 'test'
+  App:
+    Type: String
+    Default: 'aryndin-test'
+
+
+Resources:
+  IAMStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./iam.yml
+      Parameters:
+        Env: !Ref Env
+        App: !Ref App
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ./lambdas.yml
+      Parameters:
+        Env: !Ref Env
+        App: !Ref App
+        ReceiverLambdaIAMRoleArn: !GetAtt IAMStack.Outputs.ReceiverLambdaIAMRoleArn
+        PAConverterLambdaRoleArn: !GetAtt IAMStack.Outputs.PAConverterLambdaRoleArn
+        PAUpdateLambdaRoleArn: !GetAtt IAMStack.Outputs.PAUpdateLambdaRoleArn
+
+
+  
