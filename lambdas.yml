@@ -7,19 +7,8 @@ Parameters:
     Type: String
   App:
     Type: String
-  ReceiverLambdaIAMRoleArn:
-    Type: String
-  PAConverterLambdaRoleArn:
-    Type: String
-  PAUpdateLambdaRoleArn:
-    Type: String
 
 Resources:
-  VendorsBucket:
-    Type: AWS::S3::Bucket
-    Properties: 
-      AccessControl: Private
-      BucketName: !Sub "${Env}-${App}-vendors-bucket"
 
   PAConverterLambda:
     Type: AWS::Serverless::Function
@@ -28,22 +17,19 @@ Resources:
       Handler: index.handler
       Runtime: nodejs16.x
       MemorySize: 128
-      Role: !Ref PAConverterLambdaRoleArn
       Policies:
-        - S3Policy:
-            Statement:
-              Effect: Allow
-              Action: 's3:GetObject'
-              Resource: !Sub "arn:aws:s3:::${VendorsBucket}/*"
-        - DynamoDBPolicy:
-            Statement:
-              Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: '*'
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 's3:GetObject'
+            Resource: !Sub "arn:aws:s3:::${Env}-${App}-vendors-bucket/*"
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Resource: '*'
       Events:
         S3Event:
           Type: S3
@@ -60,38 +46,41 @@ Resources:
       Handler: index.handler
       Runtime: nodejs16.x
       MemorySize: 128
-      Role: !Ref PAUpdateLambdaRoleArn
       Policies:
-          - S3Policy:
-              Statement:
-                Effect: Allow
-                Action: 's3:GetObject'
-                Resource: !Sub "arn:aws:s3:::${VendorsBucket}/*"
-          - DynamoDBPolicy:
-            Statement:
-              Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: '*'
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 's3:GetObject'
+            Resource: !Sub "arn:aws:s3:::${Env}-${App}-vendors-bucket/*"
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Resource: '*'
       InlineCode: |
         exports.handler = async(event) => console.log('PAUpdateLambda');
 
-  LambdaS3EventPermissionConverter:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt PAConverterLambda.Arn
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !GetAtt VendorsBucket.Arn
+  VendorsBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub "${Env}-${App}-vendors-bucket"
 
-  LambdaS3EventPermissionUpdater:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt PAUpdateLambda.Arn
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !GetAtt VendorsBucket.Arn
+  # LambdaS3EventPermissionConverter:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     FunctionName: !GetAtt PAConverterLambda.Arn
+  #     Action: lambda:InvokeFunction
+  #     Principal: s3.amazonaws.com
+  #     SourceArn: !GetAtt VendorsBucket.Arn
+
+  # LambdaS3EventPermissionUpdater:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     FunctionName: !GetAtt PAUpdateLambda.Arn
+  #     Action: lambda:InvokeFunction
+  #     Principal: s3.amazonaws.com
+  #     SourceArn: !GetAtt VendorsBucket.Arn
 

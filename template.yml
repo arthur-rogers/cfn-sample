@@ -12,13 +12,21 @@ Parameters:
 
 
 Resources:
-  IAMStack:
+  DynamoDBStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./iam.yml
+      TemplateURL: ./dynamodb.yml
       Parameters:
         Env: !Ref Env
         App: !Ref App
+
+  # IAMStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: ./iam.yml
+  #     Parameters:
+  #       Env: !Ref Env
+  #       App: !Ref App
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
@@ -27,9 +35,9 @@ Resources:
       Parameters:
         Env: !Ref Env
         App: !Ref App
-        ReceiverLambdaIAMRoleArn: !GetAtt IAMStack.Outputs.ReceiverLambdaIAMRoleArn
-        PAConverterLambdaRoleArn: !GetAtt IAMStack.Outputs.PAConverterLambdaRoleArn
-        PAUpdateLambdaRoleArn: !GetAtt IAMStack.Outputs.PAUpdateLambdaRoleArn
+        # ReceiverLambdaIAMRoleArn: !GetAtt IAMStack.Outputs.ReceiverLambdaIAMRoleArn
+        # PAConverterLambdaRoleArn: !GetAtt IAMStack.Outputs.PAConverterLambdaRoleArn
+        # PAUpdateLambdaRoleArn: !GetAtt IAMStack.Outputs.PAUpdateLambdaRoleArn
 
 
   
